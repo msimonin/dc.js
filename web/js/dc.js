@@ -998,7 +998,6 @@ dc.baseMixin = function (_chart) {
     }
 
     function addFilter(_) {
-      console.log(_);
         _filters.push(_);
         applyFilters();
         _chart._invokeFilteredListener(_);
@@ -1079,6 +1078,7 @@ dc.baseMixin = function (_chart) {
     };
 
     _chart.fadeDeselected = function (e) {
+      console.log(e);
         d3.select(e).classed(dc.constants.SELECTED_CLASS, false);
         d3.select(e).classed(dc.constants.DESELECTED_CLASS, true);
     };
@@ -1094,7 +1094,6 @@ dc.baseMixin = function (_chart) {
     (as passed back to the callback) and redraw the chart group.
     **/
     _chart.onClick = function (d) {
-        console.log("onclick");
         var filter = _chart.keyAccessor()(d);
         dc.events.trigger(function () {
             _chart.filter(filter);
@@ -1880,7 +1879,7 @@ dc.coordinateGridMixin = function (_chart) {
         }
 
         _xAxis = _xAxis.scale(_chart.x());
-        
+
         renderVerticalGridLines(g);
     }
 
@@ -2437,7 +2436,6 @@ dc.coordinateGridMixin = function (_chart) {
         _chart._prepareYAxis(_chart.g());
 
         _chart.plotData();
-
 
         if (_chart.elasticX() || _refocused || render)
             _chart.renderXAxis(_chart.g());
@@ -3130,15 +3128,15 @@ dc.bubbleMixin = function (_chart) {
 
 Includes: [Color Mixin](#color-mixin)
 
-This Mixin provides reusable functionalities for any chart that needs to visualize data using bubbles.
+This Mixin provides reusable functionalities for any chart that needs to visualize data using rects.
 
 **/
 dc.rectMixin = function (_chart) {
     var _maxBubbleRelativeSize = 0.3;
     var _minRadiusWithLabel = 10;
 
-    _chart.BUBBLE_NODE_CLASS = "node";
-    _chart.BUBBLE_CLASS = "bubble";
+    _chart.RECT_NODE_CLASS = "node";
+    _chart.RECT_CLASS = "rectunit";
     _chart.MIN_RADIUS = 10;
 
     _chart = dc.colorMixin(_chart);
@@ -3150,25 +3148,12 @@ dc.rectMixin = function (_chart) {
         return group.top(Infinity);
     });
 
-    /** Override.*/
-    //var _x;
-
-    var _r = d3.scale.linear().domain([0, 100]);
-    var _widthScale ;
-
     var _widthValueAccessor = function(d) {
-      return d.width;
-    }
+        return d.width;
+    };
 
-    /**
-    #### .r([bubbleRadiusScale])
-    Get or set bubble radius scale. By default bubble chart uses ```d3.scale.linear().domain([0, 100])``` as it's r scale .
-
-    **/
-    _chart.r = function (_) {
-        if (!arguments.length) return _r;
-        _r = _;
-        return _chart;
+    var _heightValueAccessor = function(d) {
+        return d.height;
     };
 
     
@@ -3186,8 +3171,8 @@ dc.rectMixin = function (_chart) {
     /**
     #### .widthValueAccessor([radiusValueAccessor])
     Get or set the width value accessor function. The width value accessor function if set will be used to retrieve data value
-    for each and every bubble rendered. The data retrieved then will be mapped using r scale to be used as the actual bubble
-    width. In other words, this allows you to encode a data dimension using bubble size.
+    for each and every rect rendered. The data retrieved then will be mapped using r scale to be used as the actual rect
+    width. In other words, this allows you to encode a data dimension using rect size.
 
     **/
     _chart.widthValueAccessor = function (_) {
@@ -3199,36 +3184,14 @@ dc.rectMixin = function (_chart) {
     /**
     #### .heightValueAccessor([radiusValueAccessor])
     Get or set the height value accessor function. The height value accessor function if set will be used to retrieve data value
-    for each and every bubble rendered. The data retrieved then will be mapped using r scale to be used as the actual bubble
-    height. In other words, this allows you to encode a data dimension using bubble size.
+    for each and every rect rendered. The data retrieved then will be mapped using r scale to be used as the actual rect
+    height. In other words, this allows you to encode a data dimension using rect size.
 
     **/
     _chart.heightValueAccessor = function (_) {
         if (!arguments.length) return _heightValueAccessor;
         _heightValueAccessor = _;
         return _chart;
-    };
-
-    _chart.rMin = function () {
-        var min = d3.min(_chart.data(), function (e) {
-            return _chart.radiusValueAccessor()(e);
-        });
-        return min;
-    };
-
-    _chart.rMax = function () {
-        var max = d3.max(_chart.data(), function (e) {
-            return _chart.radiusValueAccessor()(e);
-        });
-        return max;
-    };
-
-    _chart.bubbleR = function (d) {
-        var value = _chart.radiusValueAccessor()(d);
-        var r = _chart.r()(value);
-        if (isNaN(r) || value <= 0)
-            r = 0;
-        return r;
     };
 
     _chart.rectWidth = function (d) {
@@ -3244,20 +3207,37 @@ dc.rectMixin = function (_chart) {
         return w;
     };
 
+    _chart.rectHeight = function (d) {
+        var value = _chart.heightValueAccessor()(d);
+        console.log(value);
+        var domain = _chart.y().domain();
+        console.log(domain);
+        var range = _chart.y().range();
+        console.log(range);
+        // should be set globally
+        var heightScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, Math.max(range[0], range[1]) - Math.min(range[0], range[1])]);
+
+        var w = heightScale(value);
+        if (isNaN(w) || value <= 0)
+            w = 0;
+        return w;
+    };
+
     var labelFunction = function (d) {
         return _chart.label()(d);
     };
 
     var labelOpacity = function (d) {
-        return (_chart.bubbleR(d) > _minRadiusWithLabel) ? 1 : 0;
+        // FIXME
+        return 1
     };
 
-    _chart._doRenderLabel = function (bubbleGEnter) {
+    _chart._doRenderLabel = function (rectGEnter) {
         if (_chart.renderLabel()) {
-            var label = bubbleGEnter.select("text");
+            var label = rectGEnter.select("text");
 
             if (label.empty()) {
-                label = bubbleGEnter.append("text")
+                label = rectGEnter.append("text")
                     .attr("text-anchor", "middle")
                     .attr("dy", ".3em")
                     .on("click", _chart.onClick);
@@ -3271,9 +3251,9 @@ dc.rectMixin = function (_chart) {
         }
     };
 
-    _chart.doUpdateLabels = function (bubbleGEnter) {
+    _chart.doUpdateLabels = function (rectGEnter) {
         if (_chart.renderLabel()) {
-            var labels = bubbleGEnter.selectAll("text")
+            var labels = rectGEnter.selectAll("text")
                 .text(labelFunction);
             dc.transition(labels, _chart.transitionDuration())
                 .attr("opacity", labelOpacity);
@@ -3301,7 +3281,7 @@ dc.rectMixin = function (_chart) {
 
     /**
     #### .minRadiusWithLabel([radius])
-    Get or set the minimum radius for label rendering. If a bubble's radius is less than this value then no label will be rendered.
+    Get or set the minimum radius for label rendering. If a rect's radius is less than this value then no label will be rendered.
     Default value: 10.
 
     **/
@@ -3313,8 +3293,8 @@ dc.rectMixin = function (_chart) {
 
     /**
     #### .maxBubbleRelativeSize([relativeSize])
-    Get or set the maximum relative size of a bubble to the length of x axis. This value is useful when the radius differences among
-    different bubbles are too great. Default value: 0.3
+    Get or set the maximum relative size of a rect to the length of x axis. This value is useful when the radius differences among
+    different rects are too great. Default value: 0.3
 
     **/
     _chart.maxBubbleRelativeSize = function (_) {
@@ -3324,16 +3304,22 @@ dc.rectMixin = function (_chart) {
     };
 
     _chart.fadeDeselectedArea = function () {
+      console.log("fade");
         if (_chart.hasFilter()) {
-            _chart.selectAll("g." + _chart.BUBBLE_NODE_CLASS).each(function (d) {
+          console.log("has filter");
+            _chart.selectAll("g." + _chart.RECT_NODE_CLASS).each(function (d) {
                 if (_chart.isSelectedNode(d)) {
+                  console.log("is selected")
+                  console.log(d);
                     _chart.highlightSelected(this);
                 } else {
+                  console.log("is not selected");
+                  console.log(d);
                     _chart.fadeDeselected(this);
                 }
             });
         } else {
-            _chart.selectAll("g." + _chart.BUBBLE_NODE_CLASS).each(function (d) {
+            _chart.selectAll("g." + _chart.RECT_NODE_CLASS).each(function (d) {
                 _chart.resetHighlight(this);
             });
         }
@@ -3344,7 +3330,6 @@ dc.rectMixin = function (_chart) {
     };
 
     _chart.onClick = function (d) {
-      console.log("rect-mixin : onclick");
         var filter = d.key;
         dc.events.trigger(function () {
             _chart.filter(filter);
@@ -4825,21 +4810,21 @@ dc.bubbleChart = function(parent, chartGroup) {
 /**
 ## Bubble Chart
 
-Includes: [Bubble Mixin](#bubble-mixin), [Coordinate Grid Mixin](#coordinate-grid-mixin)
+Includes: [Bubble Mixin](#rect-mixin), [Coordinate Grid Mixin](#coordinate-grid-mixin)
 
-A concrete implementation of a general purpose bubble chart that allows data visualization using the following dimensions:
+A concrete implementation of a general purpose rect chart that allows data visualization using the following dimensions:
 
 * x axis position
 * y axis position
-* bubble radius
+* rect radius
 * color
 
 Examples:
 * [Nasdaq 100 Index](http://dc-js.github.com/dc.js/)
 * [US Venture Capital Landscape 2011](http://dc-js.github.com/dc.js/vc/index.html)
 
-#### dc.bubbleChart(parent[, chartGroup])
-Create a bubble chart instance and attach it to the given parent element.
+#### dc.rectChart(parent[, chartGroup])
+Create a rect chart instance and attach it to the given parent element.
 
 Parameters:
 * parent : string - any valid d3 single selector representing typically a dom block element such as a div.
@@ -4848,114 +4833,98 @@ Parameters:
    chart group.
 
 Return:
-A newly created bubble chart instance
+A newly created rect chart instance
 
 ```js
-// create a bubble chart under #chart-container1 element using the default global chart group
-var bubbleChart1 = dc.bubbleChart("#chart-container1");
-// create a bubble chart under #chart-container2 element using chart group A
-var bubbleChart2 = dc.bubbleChart("#chart-container2", "chartGroupA");
+// create a rect chart under #chart-container1 element using the default global chart group
+var rectChart1 = dc.rectChart("#chart-container1");
+// create a rect chart under #chart-container2 element using chart group A
+var rectChart2 = dc.rectChart("#chart-container2", "chartGroupA");
 ```
 
 **/
 dc.rectChart = function(parent, chartGroup) {
     var _chart = dc.rectMixin(dc.coordinateGridMixin({}));
 
-    var _elasticRadius = false;
-
     _chart.transitionDuration(750);
 
-    var bubbleLocator = function(d) {
-        return "translate(" + (bubbleX(d)) + "," + (bubbleY(d)) + ")";
-    };
-
-    /**
-    #### .elasticRadius([boolean])
-    Turn on or off elastic bubble radius feature. If this feature is turned on, then bubble radiuses will be automatically rescaled
-    to fit the chart better.
-
-    **/
-    _chart.elasticRadius = function(_) {
-        if (!arguments.length) return _elasticRadius;
-        _elasticRadius = _;
-        return _chart;
+    var rectLocator = function(d) {
+        return "translate(" + (rectX(d)) + "," + (rectY(d)) + ")";
     };
 
     _chart.plotData = function() {
-        if (_elasticRadius)
-            _chart.r().domain([_chart.rMin(), _chart.rMax()]);
-
-        _chart.r().range([_chart.MIN_RADIUS, _chart.xAxisLength() * _chart.maxBubbleRelativeSize()]);
-
-        var bubbleG = _chart.chartBodyG().selectAll("g." + _chart.BUBBLE_NODE_CLASS)
+        
+      var rectG = _chart.chartBodyG().selectAll("g." + _chart.RECT_NODE_CLASS)
             .data(_chart.data(), function (d) { return d.key; });
   
-        renderNodes(bubbleG);
+        renderNodes(rectG);
 
-        updateNodes(bubbleG);
+        updateNodes(rectG);
 
-        removeNodes(bubbleG);
+        removeNodes(rectG);
           
         _chart.fadeDeselectedArea();
 
     };
 
-    function renderNodes(bubbleG) {
-        var bubbleGEnter = bubbleG.enter().append("g");
+    function renderNodes(rectG) {
+        var rectGEnter = rectG.enter().append("g");
 
-        bubbleGEnter
-            .attr("class", _chart.BUBBLE_NODE_CLASS)
-            .attr("transform", bubbleLocator)
+        rectGEnter
+            .attr("class", _chart.RECT_NODE_CLASS)
+            .attr("transform", rectLocator)
             .append("rect").attr("class", function(d, i) {
-                return _chart.BUBBLE_CLASS + " _" + i;
+                return _chart.RECT_CLASS + " _" + i;
             })
             .attr("width", "0")
             .attr("height","10")
             .on("click", _chart.onClick)
-            .attr("fill", _chart.getColor)
+            .attr("fill", _chart.getColor);
 
-        dc.transition(bubbleG, _chart.transitionDuration())
-            .selectAll("rect." + _chart.BUBBLE_CLASS)
-            .attr("width", function(d){return _chart.rectWidth(d)})
-            .attr("height", "10")
+        dc.transition(rectG, _chart.transitionDuration())
+            .selectAll("rect." + _chart.RECT_CLASS)
+            .attr("width", function(d){return _chart.rectWidth(d);})
+            .attr("height", function(d){return _chart.rectHeight(d);})
             .attr("opacity", function(d) {
-                return 0.5
+                return 0.5;
             });
 
-        //_chart._doRenderLabel(bubbleGEnter);
+        //_chart._doRenderLabel(rectGEnter);
 
-        _chart._doRenderTitles(bubbleGEnter);
+        _chart._doRenderTitles(rectGEnter);
     }
 
-    function updateNodes(bubbleG) {
-        dc.transition(bubbleG, _chart.transitionDuration())
-            .attr("transform", bubbleLocator)
-            .selectAll("rect." + _chart.BUBBLE_CLASS)
+    function updateNodes(rectG) {
+        dc.transition(rectG, _chart.transitionDuration())
+            .attr("transform", rectLocator)
+            .selectAll("rect." + _chart.RECT_CLASS)
             .attr("fill", _chart.getColor)
-            .attr("width", function(d){return _chart.rectWidth(d)})
-            .attr("height", "10")
+            .attr("width", function(d){return _chart.rectWidth(d);})
+            .attr("height", function(d){return _chart.rectHeight(d);})
             .attr("opacity", function(d) {
-                return 0.5
+                return 0.5;
             });
 
-        _chart.doUpdateLabels(bubbleG);
-        _chart.doUpdateTitles(bubbleG);
+        _chart.doUpdateLabels(rectG);
+        _chart.doUpdateTitles(rectG);
     }
 
-    function removeNodes(bubbleG) {
+    function removeNodes(rectG) {
         console.log("remove");
-        bubbleG.exit().remove();
+        rectG.exit().remove();
     }
 
-    function bubbleX(d) {
+    function rectX(d) {
+       // FIXME center rect option
         var x = _chart.x()(_chart.keyAccessor()(d));
         if (isNaN(x))
             x = 0;
         return x;
     }
 
-    function bubbleY(d) {
-        var y = _chart.y()(_chart.valueAccessor()(d));
+    function rectY(d) {
+       // FIXME center rect option
+        var y = _chart.y()(_chart.valueAccessor()(d)); // - _chart.rectHeight(d)/2;
         if (isNaN(y))
             y = 0;
         return y;

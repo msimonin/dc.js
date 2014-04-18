@@ -84,7 +84,7 @@
     xScale = d3.time.scale().domain([minDate, maxDate]);
 
     yScale1 = d3.scale.ordinal().domain(['A', 'B']).range([0,1]);
-    yScale = d3.scale.linear().domain([-0.5, 1]).clamp(true);
+    yScale = d3.scale.linear().domain([-0.5, 1]).range([0,300]);
     yScale3 = d3.scale.ordinal().domain([0, 1]).range(['A','B']);
 
     rectChart
@@ -104,7 +104,11 @@
     .y(yScale)
     .widthValueAccessor(function(p) {
       return new Date(p.value.end) - new Date(p.value.start)
-      })
+    })
+    .heightValueAccessor(function(p) {
+      return 0.5;
+    })
+
     .renderTitle(true)
     .title(function(d){
       return [

@@ -135,6 +135,13 @@ div.dc-chart {
     fill: #ccc;
 }
 
+.dc-chart .deselected rect {
+    stroke: none;
+    fill-opacity: .5;
+    fill: #ccc;
+}
+
+
 .dc-chart .bubble {
     stroke: none;
     fill-opacity: 0.6;

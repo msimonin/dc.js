@@ -3,15 +3,15 @@
 
 Includes: [Color Mixin](#color-mixin)
 
-This Mixin provides reusable functionalities for any chart that needs to visualize data using bubbles.
+This Mixin provides reusable functionalities for any chart that needs to visualize data using rects.
 
 **/
 dc.rectMixin = function (_chart) {
     var _maxBubbleRelativeSize = 0.3;
     var _minRadiusWithLabel = 10;
 
-    _chart.BUBBLE_NODE_CLASS = "node";
-    _chart.BUBBLE_CLASS = "bubble";
+    _chart.RECT_NODE_CLASS = "node";
+    _chart.RECT_CLASS = "rectunit";
     _chart.MIN_RADIUS = 10;
 
     _chart = dc.colorMixin(_chart);
@@ -23,25 +23,12 @@ dc.rectMixin = function (_chart) {
         return group.top(Infinity);
     });
 
-    /** Override.*/
-    //var _x;
-
-    var _r = d3.scale.linear().domain([0, 100]);
-    var _widthScale ;
-
     var _widthValueAccessor = function(d) {
-      return d.width;
-    }
+        return d.width;
+    };
 
-    /**
-    #### .r([bubbleRadiusScale])
-    Get or set bubble radius scale. By default bubble chart uses ```d3.scale.linear().domain([0, 100])``` as it's r scale .
-
-    **/
-    _chart.r = function (_) {
-        if (!arguments.length) return _r;
-        _r = _;
-        return _chart;
+    var _heightValueAccessor = function(d) {
+        return d.height;
     };
 
     
@@ -59,8 +46,8 @@ dc.rectMixin = function (_chart) {
     /**
     #### .widthValueAccessor([radiusValueAccessor])
     Get or set the width value accessor function. The width value accessor function if set will be used to retrieve data value
-    for each and every bubble rendered. The data retrieved then will be mapped using r scale to be used as the actual bubble
-    width. In other words, this allows you to encode a data dimension using bubble size.
+    for each and every rect rendered. The data retrieved then will be mapped using r scale to be used as the actual rect
+    width. In other words, this allows you to encode a data dimension using rect size.
 
     **/
     _chart.widthValueAccessor = function (_) {
@@ -72,36 +59,14 @@ dc.rectMixin = function (_chart) {
     /**
     #### .heightValueAccessor([radiusValueAccessor])
     Get or set the height value accessor function. The height value accessor function if set will be used to retrieve data value
-    for each and every bubble rendered. The data retrieved then will be mapped using r scale to be used as the actual bubble
-    height. In other words, this allows you to encode a data dimension using bubble size.
+    for each and every rect rendered. The data retrieved then will be mapped using r scale to be used as the actual rect
+    height. In other words, this allows you to encode a data dimension using rect size.
 
     **/
     _chart.heightValueAccessor = function (_) {
         if (!arguments.length) return _heightValueAccessor;
         _heightValueAccessor = _;
         return _chart;
-    };
-
-    _chart.rMin = function () {
-        var min = d3.min(_chart.data(), function (e) {
-            return _chart.radiusValueAccessor()(e);
-        });
-        return min;
-    };
-
-    _chart.rMax = function () {
-        var max = d3.max(_chart.data(), function (e) {
-            return _chart.radiusValueAccessor()(e);
-        });
-        return max;
-    };
-
-    _chart.bubbleR = function (d) {
-        var value = _chart.radiusValueAccessor()(d);
-        var r = _chart.r()(value);
-        if (isNaN(r) || value <= 0)
-            r = 0;
-        return r;
     };
 
     _chart.rectWidth = function (d) {
@@ -117,20 +82,37 @@ dc.rectMixin = function (_chart) {
         return w;
     };
 
+    _chart.rectHeight = function (d) {
+        var value = _chart.heightValueAccessor()(d);
+        console.log(value);
+        var domain = _chart.y().domain();
+        console.log(domain);
+        var range = _chart.y().range();
+        console.log(range);
+        // should be set globally
+        var heightScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, Math.max(range[0], range[1]) - Math.min(range[0], range[1])]);
+
+        var w = heightScale(value);
+        if (isNaN(w) || value <= 0)
+            w = 0;
+        return w;
+    };
+
     var labelFunction = function (d) {
         return _chart.label()(d);
     };
 
     var labelOpacity = function (d) {
-        return (_chart.bubbleR(d) > _minRadiusWithLabel) ? 1 : 0;
+        // FIXME
+        return 1;
     };
 
-    _chart._doRenderLabel = function (bubbleGEnter) {
+    _chart._doRenderLabel = function (rectGEnter) {
         if (_chart.renderLabel()) {
-            var label = bubbleGEnter.select("text");
+            var label = rectGEnter.select("text");
 
             if (label.empty()) {
-                label = bubbleGEnter.append("text")
+                label = rectGEnter.append("text")
                     .attr("text-anchor", "middle")
                     .attr("dy", ".3em")
                     .on("click", _chart.onClick);
@@ -144,9 +126,9 @@ dc.rectMixin = function (_chart) {
         }
     };
 
-    _chart.doUpdateLabels = function (bubbleGEnter) {
+    _chart.doUpdateLabels = function (rectGEnter) {
         if (_chart.renderLabel()) {
-            var labels = bubbleGEnter.selectAll("text")
+            var labels = rectGEnter.selectAll("text")
                 .text(labelFunction);
             dc.transition(labels, _chart.transitionDuration())
                 .attr("opacity", labelOpacity);
@@ -174,7 +156,7 @@ dc.rectMixin = function (_chart) {
 
     /**
     #### .minRadiusWithLabel([radius])
-    Get or set the minimum radius for label rendering. If a bubble's radius is less than this value then no label will be rendered.
+    Get or set the minimum radius for label rendering. If a rect's radius is less than this value then no label will be rendered.
     Default value: 10.
 
     **/
@@ -186,8 +168,8 @@ dc.rectMixin = function (_chart) {
 
     /**
     #### .maxBubbleRelativeSize([relativeSize])
-    Get or set the maximum relative size of a bubble to the length of x axis. This value is useful when the radius differences among
-    different bubbles are too great. Default value: 0.3
+    Get or set the maximum relative size of a rect to the length of x axis. This value is useful when the radius differences among
+    different rects are too great. Default value: 0.3
 
     **/
     _chart.maxBubbleRelativeSize = function (_) {
@@ -198,7 +180,7 @@ dc.rectMixin = function (_chart) {
 
     _chart.fadeDeselectedArea = function () {
         if (_chart.hasFilter()) {
-            _chart.selectAll("g." + _chart.BUBBLE_NODE_CLASS).each(function (d) {
+            _chart.selectAll("g." + _chart.RECT_NODE_CLASS).each(function (d) {
                 if (_chart.isSelectedNode(d)) {
                     _chart.highlightSelected(this);
                 } else {
@@ -206,7 +188,7 @@ dc.rectMixin = function (_chart) {
                 }
             });
         } else {
-            _chart.selectAll("g." + _chart.BUBBLE_NODE_CLASS).each(function (d) {
+            _chart.selectAll("g." + _chart.RECT_NODE_CLASS).each(function (d) {
                 _chart.resetHighlight(this);
             });
         }
@@ -217,7 +199,6 @@ dc.rectMixin = function (_chart) {
     };
 
     _chart.onClick = function (d) {
-      console.log("rect-mixin : onclick");
         var filter = d.key;
         dc.events.trigger(function () {
             _chart.filter(filter);
