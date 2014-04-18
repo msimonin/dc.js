@@ -1078,7 +1078,6 @@ dc.baseMixin = function (_chart) {
     };
 
     _chart.fadeDeselected = function (e) {
-      console.log(e);
         d3.select(e).classed(dc.constants.SELECTED_CLASS, false);
         d3.select(e).classed(dc.constants.DESELECTED_CLASS, true);
     };
@@ -3209,11 +3208,8 @@ dc.rectMixin = function (_chart) {
 
     _chart.rectHeight = function (d) {
         var value = _chart.heightValueAccessor()(d);
-        console.log(value);
         var domain = _chart.y().domain();
-        console.log(domain);
         var range = _chart.y().range();
-        console.log(range);
         // should be set globally
         var heightScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, Math.max(range[0], range[1]) - Math.min(range[0], range[1])]);
 
@@ -3229,7 +3225,7 @@ dc.rectMixin = function (_chart) {
 
     var labelOpacity = function (d) {
         // FIXME
-        return 1
+        return 1;
     };
 
     _chart._doRenderLabel = function (rectGEnter) {
@@ -3304,17 +3300,11 @@ dc.rectMixin = function (_chart) {
     };
 
     _chart.fadeDeselectedArea = function () {
-      console.log("fade");
         if (_chart.hasFilter()) {
-          console.log("has filter");
             _chart.selectAll("g." + _chart.RECT_NODE_CLASS).each(function (d) {
                 if (_chart.isSelectedNode(d)) {
-                  console.log("is selected")
-                  console.log(d);
                     _chart.highlightSelected(this);
                 } else {
-                  console.log("is not selected");
-                  console.log(d);
                     _chart.fadeDeselected(this);
                 }
             });
@@ -4854,7 +4844,7 @@ dc.rectChart = function(parent, chartGroup) {
 
     _chart.plotData = function() {
         
-      var rectG = _chart.chartBodyG().selectAll("g." + _chart.RECT_NODE_CLASS)
+        var rectG = _chart.chartBodyG().selectAll("g." + _chart.RECT_NODE_CLASS)
             .data(_chart.data(), function (d) { return d.key; });
   
         renderNodes(rectG);
@@ -4910,7 +4900,6 @@ dc.rectChart = function(parent, chartGroup) {
     }
 
     function removeNodes(rectG) {
-        console.log("remove");
         rectG.exit().remove();
     }
 

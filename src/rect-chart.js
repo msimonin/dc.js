@@ -101,7 +101,6 @@ dc.rectChart = function(parent, chartGroup) {
     }
 
     function removeNodes(rectG) {
-        console.log("remove");
         rectG.exit().remove();
     }
 

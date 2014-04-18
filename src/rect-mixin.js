@@ -84,11 +84,8 @@ dc.rectMixin = function (_chart) {
 
     _chart.rectHeight = function (d) {
         var value = _chart.heightValueAccessor()(d);
-        console.log(value);
         var domain = _chart.y().domain();
-        console.log(domain);
         var range = _chart.y().range();
-        console.log(range);
         // should be set globally
         var heightScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, Math.max(range[0], range[1]) - Math.min(range[0], range[1])]);
 
