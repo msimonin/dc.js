@@ -3197,10 +3197,23 @@ dc.rectMixin = function (_chart) {
         var value = _chart.widthValueAccessor()(d);
         var domain = _chart.x().domain();
         var range = _chart.x().range();
-        // should be set globally
-        var widthScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, range[1] - range[0]]);
+        // should be set globally ? 
+        console.log(range);
+        console.log(domain);
+        var widthScale;
+        if (_chart.isOrdinal()) {
+          // [0,1] -> [0, width between the two firsts] 
+          console.log("ordinal");
+          console.log(value);
+          widthScale = d3.scale.linear().domain([0,1]).range([0,range[1]-range[0]])
+        }
+        else {
+          // [0, width max] -> [0, width max]
+          widthScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, range[1] - range[0]]);
+        }
 
         var w = widthScale(value);
+        console.log(w);
         if (isNaN(w) || value <= 0)
             w = 0;
         return w;

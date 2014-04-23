@@ -1,0 +1,141 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="../js/d3.js"></script>
+    <script type="text/javascript" src="../js/crossfilter.js"></script>
+    <script type="text/javascript" src="../js/dc.js"></script>
+    <link type="text/css" href="../css/dc.css" rel="stylesheet" />
+  </head>
+  <body>
+    <h1>Hello Gantt</h1>
+     <div class="row">
+        <div id="rect-chart" class="col-md-6"></div>
+        <div id="pie-chart" class="col-md-6"></div>
+     </div>
+     <div class="row">
+        <div id="worker-chart" class="col-md-6"></div>
+     </div>
+    <script>
+      var data = [
+        {
+          id: "1",
+          start: "April 1, 2014 00:00:00",
+          end: "April 1, 2014 01:00:00",
+          type: "A",
+          worker: "W1"  
+        },
+        {
+          id: "12",
+          start: "April 1, 2014 00:00:00",
+          end: "April 1, 2014 01:00:00",
+          type: "A",
+          worker: "W2"  
+        },
+        {
+          id: "2",
+          start: "April 1, 2014 00:00:00",
+          end: "April 1, 2014 03:00:00",
+          type: "B",
+          worker: "W1",
+        },
+        {
+          id: "21",
+          start: "April 1, 2014 00:00:00",
+          end: "April 1, 2014 03:00:00",
+          type: "B",
+          worker: "W2",
+        },
+        {
+          id: "22",
+          start: "April 1, 2014 00:00:00",
+          end: "April 1, 2014 03:00:00",
+          type: "B",
+          worker: "W3",
+        },
+      ];
+
+    var rectChart = dc.rectChart("#rect-chart")
+    var workerChart = dc.pieChart("#worker-chart")
+    ndx = crossfilter(data);
+
+
+    typeDimension = ndx.dimension(function(d) {
+      return d.worker;
+    });
+
+    typeGroup = typeDimension.group();
+
+    workerChart
+      .width(180) // (optional) define chart width, :default = 200
+      .height(180) // (optional) define chart height, :default = 200
+      .radius(80) // define pie radius
+      .dimension(typeDimension) // set dimension
+      .group(typeGroup) // set group
+
+    
+    idDimension = ndx.dimension(function(d) {
+      return d.id;
+    });
+
+    //identity
+    idGroup = idDimension.group().reduce(
+    function(p,v) {
+        return v;
+      },
+      function(p,v) {
+        //remove from group
+        return {}; 
+     },
+     function(){
+       return [];
+     }
+    );
+
+    minDate = new Date("April 1, 2014 00:00:00");
+    maxDate = new Date("April 1, 2014 03:00:00");
+    xScale = d3.time.scale().domain([minDate, maxDate]);
+
+    yScale1 = d3.scale.ordinal().domain(['A', 'B']).range([0,1]);
+    yScale = d3.scale.linear().domain([-0.5, 1]).range([0,300]);
+    yScale3 = d3.scale.ordinal().domain([0, 1]).range(['A','B']);
+
+    rectChart
+      .width("1000")
+      .height("300")
+      .dimension(idDimension)
+      .group(idGroup)
+      .renderLabel(false)
+      .x(d3.scale.ordinal().domain(["W1", "W2", "W3"]))
+      .xUnits(dc.units.ordinal) 
+      .keyAccessor(function (p) {
+      return p.value.worker
+    })
+    .valueAccessor(function (p) {
+      v = yScale1(p.value.type);
+      return v;
+    })
+    .y(yScale)
+    .widthValueAccessor(function(p) {
+      return 0.5 
+    })
+    .heightValueAccessor(function(p) {
+      return 0.5;
+    })
+
+    .renderTitle(true)
+    .title(function(d){
+      return [
+      "id : " + d.value.id,
+      "start : " + d.value.start,
+      "end : " + d.value.end 
+      ].join("\n")
+    })
+    .xAxisLabel("time(ms)")
+    .yAxisLabel("id")
+
+    rectChart.yAxis().tickFormat(function(d){return yScale3(d)}).tickValues([0,1])
+
+    dc.renderAll();
+    </script>
+  </body>
+</html>
