@@ -74,6 +74,7 @@ dc.rectMixin = function (_chart) {
         var domain = _chart.x().domain();
         var range = _chart.x().range();
         // should be set globally ? 
+        var widthScale;
         if (_chart.isOrdinal()) {
             // [0,1] -> [0, width between the two firsts] 
             widthScale = d3.scale.linear().domain([0,1]).range([0,range[1]-range[0]]);
@@ -84,7 +85,6 @@ dc.rectMixin = function (_chart) {
         }
 
         var w = widthScale(value);
-        console.log(w);
         if (isNaN(w) || value <= 0)
             w = 0;
         return w;

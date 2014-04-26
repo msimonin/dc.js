@@ -23,7 +23,7 @@
         {
           id: "2",
           start: "April 1, 2014 00:00:00",
-          end: "April 1, 2014 03:00:00",
+          end: "April 1, 2014 02:30:00",
           type: "B"  
         },
         {
@@ -84,7 +84,7 @@
     xScale = d3.time.scale().domain([minDate, maxDate]);
 
     yScale1 = d3.scale.ordinal().domain(['A', 'B']).range([0,1]);
-    yScale = d3.scale.linear().domain([-0.5, 1]).range([0,300]);
+    yScale = d3.scale.linear().domain([-1, 1]).range([0,300]);
     yScale3 = d3.scale.ordinal().domain([0, 1]).range(['A','B']);
 
     rectChart
@@ -119,6 +119,8 @@
     })
     .xAxisLabel("time(ms)")
     .yAxisLabel("id")
+    .yAxisPadding(1)
+
 
     rectChart.yAxis().tickFormat(function(d){return yScale3(d)}).tickValues([0,1])
 

@@ -39,6 +39,13 @@ dc.rectChart = function(parent, chartGroup) {
 
     _chart.transitionDuration(750);
 
+    dc.override(_chart, "xAxisMax", function(){
+        var max = d3.max(_chart.data(), function (e) {
+            return _chart.keyAccessor()(e) + _chart.widthValueAccessor()(e);
+        });
+        return dc.utils.add(max, _xAxisPadding);
+    });
+
     var rectLocator = function(d) {
         return "translate(" + (rectX(d)) + "," + (rectY(d)) + ")";
     };
@@ -123,7 +130,7 @@ dc.rectChart = function(parent, chartGroup) {
     _chart.renderBrush = function(g) {
         // override default x axis brush from parent chart
     };
-
+    
     _chart.redrawBrush = function(g) {
         // override default x axis brush from parent chart
         _chart.fadeDeselectedArea();

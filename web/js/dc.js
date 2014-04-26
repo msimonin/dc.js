@@ -1865,6 +1865,8 @@ dc.coordinateGridMixin = function (_chart) {
 
     function prepareXAxis(g) {
         if (_chart.elasticX() && !_chart.isOrdinal()) {
+          console.log(_chart.xAxisMin());
+          console.log(_chart.xAxisMax());
             _x.domain([_chart.xAxisMin(), _chart.xAxisMax()]);
         }
         else if (_chart.isOrdinal() && _x.domain().length===0) {
@@ -2331,6 +2333,7 @@ dc.coordinateGridMixin = function (_chart) {
                 _chart.redrawGroup();
             }, dc.constants.EVENT_DELAY);
         } else {
+            console.log(extent);
             var rangedFilter = dc.filters.RangedFilter(extent[0], extent[1]);
 
             dc.events.trigger(function () {
@@ -3198,22 +3201,17 @@ dc.rectMixin = function (_chart) {
         var domain = _chart.x().domain();
         var range = _chart.x().range();
         // should be set globally ? 
-        console.log(range);
-        console.log(domain);
         var widthScale;
         if (_chart.isOrdinal()) {
-          // [0,1] -> [0, width between the two firsts] 
-          console.log("ordinal");
-          console.log(value);
-          widthScale = d3.scale.linear().domain([0,1]).range([0,range[1]-range[0]])
+            // [0,1] -> [0, width between the two firsts] 
+            widthScale = d3.scale.linear().domain([0,1]).range([0,range[1]-range[0]]);
         }
         else {
-          // [0, width max] -> [0, width max]
-          widthScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, range[1] - range[0]]);
+            // [0, width max] -> [0, width max]
+            widthScale = d3.scale.linear().domain([0, domain[1] - domain[0]]).range([0, range[1] - range[0]]);
         }
 
         var w = widthScale(value);
-        console.log(w);
         if (isNaN(w) || value <= 0)
             w = 0;
         return w;
@@ -4851,6 +4849,13 @@ dc.rectChart = function(parent, chartGroup) {
 
     _chart.transitionDuration(750);
 
+    dc.override(_chart, "xAxisMax", function(){
+        var max = d3.max(_chart.data(), function (e) {
+            return _chart.keyAccessor()(e) + _chart.widthValueAccessor()(e);
+        });
+        return dc.utils.add(max, _xAxisPadding);
+    });
+
     var rectLocator = function(d) {
         return "translate(" + (rectX(d)) + "," + (rectY(d)) + ")";
     };
@@ -4935,7 +4940,7 @@ dc.rectChart = function(parent, chartGroup) {
     _chart.renderBrush = function(g) {
         // override default x axis brush from parent chart
     };
-
+    
     _chart.redrawBrush = function(g) {
         // override default x axis brush from parent chart
         _chart.fadeDeselectedArea();
